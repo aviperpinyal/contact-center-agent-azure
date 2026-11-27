@@ -2,10 +2,10 @@
 agent-framework-foundry==1.16.2
 azure-identity==1.27.0
 python-dotenv==1.2.4
+requests==2.34.2
 
 # Pinned because Agent Framework changes quickly (installed by agent-framework-foundry)
 agent-framework-core==1.26.0
 agent-framework-openai==1.18.2
-
 
 
