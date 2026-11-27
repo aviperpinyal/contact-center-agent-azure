@@ -15,6 +15,7 @@ import sys
 from typing import Annotated
 
 from agent_framework import Agent
+from agent_framework.exceptions import AgentContentFilterException, ChatClientContentFilterException
 from agent_framework.foundry import FoundryChatClient
 from azure.identity import AzureCliCredential
 from dotenv import load_dotenv
@@ -85,10 +86,24 @@ def build_agent() -> Agent:
     )
 
 
+SAFE_DECLINE = (
+    "I'm sorry, I can't help with that request. I'm here for questions about your "
+    "Contoso Home Services system. Is there anything else I can help you with?"
+)
+
+
 async def ask(agent: Agent, session, question: str) -> None:
     print(f"\nCustomer: {question}")
-    result = await agent.run(question, session=session)
-    print(f"\nAgent: {result.text}\n")
+    try:
+        result = await agent.run(question, session=session)
+    except (ChatClientContentFilterException, AgentContentFilterException):
+        # Azure's content filter blocked the request (platform safety layer). Reply safely and keep the chat going.
+        print("   [safety] request blocked by the Azure content filter")
+        print(f"\nAgent: {SAFE_DECLINE}\n")
+        return
+    # A response can hold several messages (and the service may repeat the final text); show only the last answer.
+    answers = [m.text for m in result.messages if m.text]
+    print(f"\nAgent: {answers[-1] if answers else '(no answer)'}\n")
 
 
 async def main() -> None:
